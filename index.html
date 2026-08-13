@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fit Martial Arts and Physical Fitness</title>
+  <link rel="icon" type="image/png" href="https://static.robo-universe.com/assets/logos/robo/logo/500x500.png" />
+  <link rel="apple-touch-icon" href="https://static.robo-universe.com/assets/logos/robo/logo/500x500.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'media',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Helvetica', 'Helvetica Neue', 'Arial', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @keyframes growLine {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes ringFill {
+      from { stroke-dashoffset: 176.9; }
+      to { stroke-dashoffset: 0; }
+    }
+    .arrow-line { transform: scaleX(0); transform-origin: center; }
+    .arrow-line-left { transform-origin: right center; }
+    .arrow-line-right { transform-origin: left center; }
+    .measure-text { opacity: 0; }
+    #measure.play .arrow-line {
+      animation: growLine 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+    }
+    #measure.play .measure-text {
+      animation: fadeIn 0.55s ease 1.05s forwards;
+    }
+    #scan-ring.running .ring-progress {
+      animation: ringFill 3s linear forwards;
+    }
+    body { font-family: Helvetica, "Helvetica Neue", Arial, sans-serif; font-weight: 500; }
+  </style>
+</head>
+<body class="min-h-dvh bg-zinc-50 font-sans font-medium text-zinc-900 antialiased transition-colors duration-300 dark:bg-zinc-950 dark:text-zinc-100">
+  <video id="preview" class="pointer-events-none fixed -left-[9999px] h-px w-px opacity-0" playsinline autoplay muted></video>
+  <canvas id="frame" class="hidden"></canvas>
+
+  <audio id="audio-camera" preload="auto" src="https://fitmapf.robo-universe.com/assets/fitmapf-camera.mp3"></audio>
+  <audio id="audio-belt" preload="auto" src="https://fitmapf.robo-universe.com/assets/fitmapf-beltscan.mp3"></audio>
+  <audio id="audio-fail" preload="auto" src="https://fitmapf.robo-universe.com/assets/fitmapf-beltscanfail.mp3"></audio>
+  <audio id="audio-black" preload="auto" src="https://fitmapf.robo-universe.com/assets/fitmapf-beltscanblack.mp3"></audio>
+  <audio id="audio-black-fail" preload="auto" src="https://fitmapf.robo-universe.com/assets/fitmapf-beltscanblackfail.mp3"></audio>
+  <audio id="audio-worked" preload="auto" src="https://fitmapf.robo-universe.com/assets/fitmapf-beltscanworked.mp3"></audio>
+
+  <div id="scan-ring" class="pointer-events-none fixed left-1/2 z-40 hidden -translate-x-1/2 -translate-y-1/2" style="top:75vh">
+    <svg width="72" height="72" viewBox="0 0 72 72">
+      <circle cx="36" cy="36" r="28" fill="none" class="stroke-zinc-300 dark:stroke-zinc-700" stroke-width="5"/>
+      <circle class="ring-progress" cx="36" cy="36" r="28" fill="none" stroke="#d4af37" stroke-width="5" stroke-linecap="round" transform="rotate(-90 36 36)" stroke-dasharray="176.9" stroke-dashoffset="176.9"/>
+    </svg>
+  </div>
+
+  <p id="rank" class="fixed left-1/2 z-40 hidden -translate-x-1/2 text-center text-lg font-medium text-zinc-900 dark:text-zinc-100" style="top:calc(75vh + 48px)"></p>
+  <div id="result-screen" class="fixed inset-0 z-50 hidden bg-zinc-50 dark:bg-zinc-950">
+    <div class="flex flex-col items-center px-4 pt-5">
+      <img
+        src="https://static.robo-universe.com/assets/logos/robo/logo/500x500.png"
+        alt="Fit Martial Arts and Physical Fitness"
+        class="h-12 w-12 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-800"
+      />
+      <p id="result-color" class="mt-6 text-center text-2xl font-bold text-zinc-900 dark:text-zinc-100" style="font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif; font-weight: 700;"></p>
+    </div>
+  </div>
+
+  <main class="flex min-h-dvh flex-col items-center px-4 pt-5">
+    <img
+      src="https://static.robo-universe.com/assets/logos/robo/logo/500x500.png"
+      alt="Fit Martial Arts and Physical Fitness"
+      class="h-12 w-12 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-800"
+    />
+
+    <div id="measure" class="mt-6 flex flex-col items-center">
+      <div class="flex items-center">
+        <svg width="112" height="72" viewBox="0 0 112 72" fill="none" aria-hidden="true" class="shrink-0 text-zinc-800 dark:text-zinc-200">
+          <rect x="4" y="18" width="62" height="38" rx="6" class="fill-zinc-200 stroke-zinc-800 dark:fill-zinc-800 dark:stroke-zinc-200" stroke-width="2.5"/>
+          <rect x="10" y="24" width="18" height="10" rx="2" class="fill-zinc-400 dark:fill-zinc-600"/>
+          <circle cx="48" cy="37" r="11" class="fill-zinc-300 stroke-zinc-800 dark:fill-zinc-700 dark:stroke-zinc-200" stroke-width="2"/>
+          <circle cx="48" cy="37" r="6" class="fill-zinc-800 dark:fill-zinc-200"/>
+          <circle cx="50.5" cy="34.5" r="2" class="fill-zinc-100 dark:fill-white"/>
+          <rect x="22" y="12" width="16" height="8" rx="2" class="fill-zinc-300 stroke-zinc-800 dark:fill-zinc-700 dark:stroke-zinc-200" stroke-width="2"/>
+          <path d="M66 30 L88 22 L88 52 L66 44 Z" class="fill-zinc-300 stroke-zinc-800 dark:fill-zinc-700 dark:stroke-zinc-200" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M88 28 L104 24 L104 50 L88 46 Z" class="fill-zinc-400/80 dark:fill-zinc-500/80"/>
+        </svg>
+
+        <div class="relative flex h-10 w-[324px] shrink-0 items-center" aria-hidden="true">
+          <svg class="relative z-10 h-5 w-5 text-zinc-900 dark:text-zinc-100" viewBox="0 0 20 20" fill="none">
+            <path d="M14 3 L6 10 L14 17" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="arrow-line arrow-line-left h-[2px] flex-1 bg-zinc-900 dark:bg-zinc-100"></div>
+          <div class="mx-1 h-2 w-2 rotate-45 border-2 border-zinc-900 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-950"></div>
+          <div class="arrow-line arrow-line-right h-[2px] flex-1 bg-zinc-900 dark:bg-zinc-100"></div>
+          <svg class="relative z-10 h-5 w-5 text-zinc-900 dark:text-zinc-100" viewBox="0 0 20 20" fill="none">
+            <path d="M6 3 L14 10 L6 17" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <svg width="96" height="64" viewBox="0 0 96 64" class="h-16 w-24 shrink-0" aria-label="Taekwondo belt">
+          <rect x="4" y="8" width="88" height="48" rx="10" fill="#111111" stroke="#2a2a2a" stroke-width="2"/>
+          <rect x="26" y="8" width="8" height="48" fill="#d4af37"/>
+        </svg>
+      </div>
+      <p class="measure-text mt-5 text-center text-lg font-medium tracking-wide text-zinc-800 dark:text-zinc-200">4.5 Inches</p>
+    </div>
+  </main>
+
+  <script>
+    const preview = document.getElementById('preview');
+    const frame = document.getElementById('frame');
+    const ctx = frame.getContext('2d', { willReadFrequently: true });
+    const measure = document.getElementById('measure');
+    const scanRing = document.getElementById('scan-ring');
+    const rankEl = document.getElementById('rank');
+    const resultScreen = document.getElementById('result-screen');
+
+    const clips = {
+      camera: document.getElementById('audio-camera'),
+      belt: document.getElementById('audio-belt'),
+      fail: document.getElementById('audio-fail'),
+      black: document.getElementById('audio-black'),
+      blackFail: document.getElementById('audio-black-fail'),
+      worked: document.getElementById('audio-worked')
+    };
+
+    const SAMPLE_POINTS = [
+      [0, 0],
+      [0, 5], [0, 10], [0, -5], [0, -10],
+      [5, 0], [10, 0], [15, 0],
+      [-5, 0], [-10, 0], [-15, 0],
+      [7.5, 5], [7.5, -5], [-7.5, 5], [-7.5, -5]
+    ];
+
+    let prevSmall = null;
+    let stillSince = 0;
+    let scanning = false;
+    let scanTimer = null;
+    let mode = 'belt';
+    let queuedClip = null;
+    let audioReady = false;
+
+    function replayMeasure() {
+      measure.classList.remove('play');
+      void measure.offsetWidth;
+      measure.classList.add('play');
+    }
+    replayMeasure();
+    setInterval(replayMeasure, 5000);
+
+    function unlockAudio() {
+      audioReady = true;
+      Object.values(clips).forEach((el) => {
+        el.muted = true;
+        el.play().then(() => {
+          el.pause();
+          el.currentTime = 0;
+          el.muted = false;
+        }).catch(() => { el.muted = false; });
+      });
+      if (queuedClip) {
+        const next = queuedClip;
+        queuedClip = null;
+        playClip(next);
+      }
+    }
+
+    function playClip(el) {
+      if (!el) return;
+      queuedClip = el;
+      if (!audioReady) return;
+      Object.values(clips).forEach((a) => {
+        a.pause();
+        try { a.currentTime = 0; } catch (_) {}
+      });
+      el.muted = false;
+      el.volume = 1;
+      const p = el.play();
+      if (p && p.catch) p.catch(() => { queuedClip = el; });
+    }
+
+    document.addEventListener('pointerdown', unlockAudio, { once: true });
+    document.addEventListener('keydown', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    function goToResultScreen(label) {
+      const text = (label && String(label).trim()) || rankEl.textContent || '';
+      const el = document.getElementById('result-color');
+      el.textContent = text;
+      el.style.display = 'block';
+      resultScreen.classList.remove('hidden');
+      resultScreen.style.display = 'block';
+      scanRing.classList.add('hidden');
+      rankEl.classList.add('hidden');
+      scanning = false;
+      clearTimeout(scanTimer);
+      playClip(clips.worked);
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0, l = (max + min) / 2;
+      const d = max - min;
+      if (d) {
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          default: h = (r - g) / d + 4;
+        }
+        h *= 60;
+      }
+      return [h, s, l];
+    }
+
+    function samplePixel(data, w, x, y) {
+      const i = (y * w + x) * 4;
+      return [data[i], data[i + 1], data[i + 2]];
+    }
+
+    function samplePatch(data, w, h, x, y, r) {
+      let R = 0, G = 0, B = 0, n = 0;
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          const px = Math.max(0, Math.min(w - 1, x + dx));
+          const py = Math.max(0, Math.min(h - 1, y + dy));
+          const [rr, gg, bb] = samplePixel(data, w, px, py);
+          R += rr; G += gg; B += bb; n++;
+        }
+      }
+      return [Math.round(R / n), Math.round(G / n), Math.round(B / n)];
+    }
+
+    function classifyColor(r, g, b) {
+      const [h, s, l] = rgbToHsl(r, g, b);
+      if (l < 0.22) return 'Black';
+      if (l > 0.78 && s < 0.28) return 'White';
+      if (s < 0.14) return l < 0.4 ? 'Black' : 'White';
+      if (h < 15 || h >= 345) return l < 0.32 ? 'Brown' : 'Red';
+      if (h < 38) return (s > 0.28 && l > 0.32) ? 'Orange' : 'Brown';
+      if (h < 72) return 'Yellow';
+      if (h < 165) return 'Green';
+      if (h < 255) return 'Blue';
+      if (h < 325) return 'Purple';
+      return 'Red';
+    }
+
+    function isGold(r, g, b) {
+      const [h, s, l] = rgbToHsl(r, g, b);
+      return h >= 38 && h <= 62 && s > 0.28 && l > 0.28 && l < 0.88;
+    }
+
+    function isBlackish(r, g, b) {
+      const [, s, l] = rgbToHsl(r, g, b);
+      return l < 0.22 || (l < 0.32 && s < 0.2);
+    }
+
+    function mapPoint(x, y, w, h) {
+      const cx = w * 0.5;
+      const cy = h * 0.75;
+      const rw = w * 0.28;
+      const rh = h * 0.22;
+      const px = Math.round(cx + (x / 15) * (rw / 2));
+      const py = Math.round(cy - (y / 10) * (rh / 2));
+      return [
+        Math.max(0, Math.min(w - 1, px)),
+        Math.max(0, Math.min(h - 1, py))
+      ];
+    }
+
+    function countGoldStripes(data, w, h) {
+      const STEP = 0.1;
+      const line = [];
+      for (let x = -15; x <= 15 + 1e-9; x = Math.round((x + STEP) * 10) / 10) {
+        const [px, py] = mapPoint(x, 0, w, h);
+        const rgb = samplePixel(data, w, px, py);
+        line.push(isGold(rgb[0], rgb[1], rgb[2]) ? 'gold' : (isBlackish(rgb[0], rgb[1], rgb[2]) ? 'black' : 'other'));
+      }
+      let stripes = 0;
+      let i = 0;
+      while (i < line.length) {
+        if (line[i] !== 'gold') { i++; continue; }
+        stripes++;
+        while (i < line.length) {
+          while (i < line.length && line[i] === 'gold') i++;
+          let blackLen = 0;
+          let j = i;
+          while (j < line.length && line[j] !== 'gold') {
+            if (line[j] === 'black') blackLen += STEP;
+            if (blackLen >= 0.1) break;
+            j++;
+          }
+          if (blackLen >= 0.1 || j >= line.length || line[j] !== 'gold') {
+            i = j;
+            break;
+          }
+          i = j;
+        }
+      }
+      return stripes;
+    }
+
+    function detectBeltColor(data, w, h) {
+      const votes = {};
+      const samples = [];
+      for (const [x, y] of SAMPLE_POINTS) {
+        const [px, py] = mapPoint(x, y, w, h);
+        const rgb = samplePatch(data, w, h, px, py, 4);
+        const name = classifyColor(rgb[0], rgb[1], rgb[2]);
+        samples.push({ x, y, name });
+        votes[name] = (votes[name] || 0) + 1;
+      }
+      const redCount = samples.filter((s) => s.name === 'Red').length;
+      const blackCount = samples.filter((s) => s.name === 'Black').length;
+      if (redCount >= 3 && blackCount >= 2 && samples.filter((s) => s.y === 0 && s.name === 'Black').length >= 2) {
+        return 'Deputy';
+      }
+      let top = null, topN = 0;
+      for (const [name, n] of Object.entries(votes)) {
+        if (n > topN) { topN = n; top = name; }
+      }
+      if (!top || topN < 3) return null;
+      return top;
+    }
+
+    function motionAmount(curr, prev) {
+      if (!prev || curr.length !== prev.length) return 999;
+      let sum = 0;
+      for (let i = 0; i < curr.length; i++) sum += Math.abs(curr[i] - prev[i]);
+      return sum / curr.length;
+    }
+
+    function startCircle() {
+      if (scanning || !resultScreen.classList.contains('hidden')) return;
+      scanning = true;
+      scanRing.classList.remove('hidden');
+      scanRing.classList.remove('running');
+      void scanRing.offsetWidth;
+      scanRing.classList.add('running');
+      clearTimeout(scanTimer);
+      scanTimer = setTimeout(finishScan, 3000);
+    }
+
+    function cancelCircle() {
+      if (!scanning) return;
+      scanning = false;
+      clearTimeout(scanTimer);
+      scanRing.classList.remove('running');
+      scanRing.classList.add('hidden');
+    }
+
+    function finishScan() {
+      scanning = false;
+      scanRing.classList.remove('running');
+      if (preview.readyState < 2) {
+        playClip(clips.fail);
+        return;
+      }
+      const vw = preview.videoWidth || 1280;
+      const vh = preview.videoHeight || 720;
+      frame.width = vw;
+      frame.height = vh;
+      ctx.drawImage(preview, 0, 0, vw, vh);
+      const img = ctx.getImageData(0, 0, vw, vh);
+
+      if (mode === 'stripe') {
+        const stripes = countGoldStripes(img.data, vw, vh);
+        if (stripes < 1 || stripes > 5) {
+          rankEl.textContent = 'Black';
+          rankEl.classList.remove('hidden');
+          playClip(clips.blackFail);
+          return;
+        }
+        const stripeLabel = stripes === 1 ? 'Black · 1 stripe' : 'Black · ' + stripes + ' stripes';
+        rankEl.textContent = stripeLabel;
+        rankEl.classList.remove('hidden');
+        goToResultScreen(stripeLabel);
+        return;
+      }
+
+      const rank = detectBeltColor(img.data, vw, vh);
+      if (!rank) {
+        rankEl.textContent = '';
+        rankEl.classList.add('hidden');
+        playClip(clips.fail);
+        return;
+      }
+      if (rank === 'Black') {
+        mode = 'stripe';
+        rankEl.textContent = 'Black';
+        rankEl.classList.remove('hidden');
+        playClip(clips.black);
+        return;
+      }
+      rankEl.textContent = rank === 'Deputy' ? 'Deputy' : rank;
+      rankEl.classList.remove('hidden');
+      goToResultScreen();
+    }
+
+    function tick() {
+      if (resultScreen.classList.contains('hidden') && preview.readyState >= 2) {
+        const sw = 64, sh = 36;
+        const small = document.createElement('canvas');
+        small.width = sw;
+        small.height = sh;
+        const sctx = small.getContext('2d', { willReadFrequently: true });
+        sctx.drawImage(preview, 0, 0, sw, sh);
+        const gray = sctx.getImageData(0, 0, sw, sh).data;
+        const lum = new Uint8Array(sw * sh);
+        for (let i = 0, p = 0; i < gray.length; i += 4, p++) {
+          lum[p] = (gray[i] * 0.3 + gray[i + 1] * 0.59 + gray[i + 2] * 0.11) | 0;
+        }
+        const motion = motionAmount(lum, prevSmall);
+        prevSmall = lum;
+        if (motion < 4.5) {
+          if (!stillSince) stillSince = performance.now();
+          if (performance.now() - stillSince >= 2000) startCircle();
+        } else {
+          stillSince = 0;
+          cancelCircle();
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    async function requestFrontCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        playClip(clips.camera);
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+        unlockAudio();
+        preview.srcObject = stream;
+        await preview.play().catch(function () {});
+        playClip(clips.belt);
+        requestAnimationFrame(tick);
+      } catch (err) {
+        unlockAudio();
+        playClip(clips.camera);
+      }
+    }
+
+    requestFrontCamera();
+  </script>
+</body>
+</html>
